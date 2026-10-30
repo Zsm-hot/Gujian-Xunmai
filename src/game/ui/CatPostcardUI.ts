@@ -7,7 +7,7 @@ export function showCatPostcard(scene: Phaser.Scene, worldId: string) {
   const cat = CATS[worldId]
   if (!cat) return
 
-  const imagePath = `/assets/${cat.imageKey}.jpg`
+const imagePath = `assets/${cat.imageKey}.jpg` // 删掉开头的斜杠
 
   if (!scene.textures.exists(cat.imageKey)) {
     scene.load.image(cat.imageKey, imagePath)
