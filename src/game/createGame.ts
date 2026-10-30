@@ -37,9 +37,7 @@ import { AngkorBoatScene } from './scenes/AngkorBoatScene.ts'
 import { MarketScene } from './scenes/MarketScene.ts'
 import { StoryIntroScene } from './scenes/StoryIntroScene.ts'
 import { EndingScene } from './scenes/EndingScene.ts'
-// scene 数组里加 WoodTimberScene
 
-// scene 数组加 GardenWellScene
 export function createGame(parent: string | HTMLElement) {
   return new Phaser.Game({
     type: Phaser.AUTO,
@@ -48,18 +46,31 @@ export function createGame(parent: string | HTMLElement) {
     height: 720,
     backgroundColor: '#d4cfc4',
     antialias: true,
+    // 👇 新增：开启全屏模式，自动适应设备尺寸
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
+      width: 1280,
+      height: 720,
+      expandParent: true, // 允许画布扩展以填满父容器
     },
-      physics: {
-    default: 'arcade',
-    arcade: {
-      gravity: { x: 0, y: 0 }, // 我们的跑酷游戏是伪3D下落，不需要重力
-      debug: false
-    }
-  },
-    // Added ZZScene to the scene list so it can be launched or transitioned to
- scene: [TitleScene, IntroScene, WorldMapScene, WorldDetailScene, CourtyardScene, RidgeBeastScene, GardenCatScene, GardenFishScene,  GardenGooseScene,GardenWellScene, WoodTimberScene,WoodDougongScene,WoodStackingScene,WoodLoadScene,EgyptMuralScene,EgyptSpotScene,EgyptStealthScene,EgyptFinalScene,PetraPathScene,PetraCamelScene,PetraCanalScene,PetraWaterScene,DomeWallScene,DomeLightScene,DomeColorScene, AngkorGalleryScene,AngkorPoolScene,MachuSpotScene,MachuDefenseScene,MachuQuarryScene,MachuLlamaScene,AngkorBoatScene,MarketScene,StoryIntroScene,EndingScene,FlowerStreetScene,CodexScene,ZZScene],
+    physics: {
+      default: 'arcade',
+      arcade: {
+        gravity: { x: 0, y: 0 },
+        debug: false
+      }
+    },
+    scene: [
+      TitleScene, IntroScene, WorldMapScene, WorldDetailScene, CourtyardScene, 
+      RidgeBeastScene, GardenCatScene, GardenFishScene, GardenGooseScene, GardenWellScene, 
+      WoodTimberScene, WoodDougongScene, WoodStackingScene, WoodLoadScene, 
+      EgyptMuralScene, EgyptSpotScene, EgyptStealthScene, EgyptFinalScene, 
+      PetraPathScene, PetraCamelScene, PetraCanalScene, PetraWaterScene, 
+      DomeWallScene, DomeLightScene, DomeColorScene, 
+      AngkorGalleryScene, AngkorPoolScene, MachuSpotScene, MachuDefenseScene, 
+      MachuQuarryScene, MachuLlamaScene, AngkorBoatScene, MarketScene, 
+      StoryIntroScene, EndingScene, FlowerStreetScene, CodexScene, ZZScene
+    ],
   })
 }
