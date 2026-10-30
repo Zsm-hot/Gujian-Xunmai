@@ -1,0 +1,23 @@
+html,
+body,
+#app {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #c9c0b2;
+}
+
+body {
+  font-family: 'Noto Serif SC', 'Songti SC', 'STSong', SimSun, serif;
+}
+
+#app {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#app canvas {
+  display: block;
+}
