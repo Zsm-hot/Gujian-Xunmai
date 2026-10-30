@@ -7,12 +7,9 @@ export function showCatPostcard(scene: Phaser.Scene, worldId: string) {
   const cat = CATS[worldId]
   if (!cat) return
 
-const imagePath = `assets/${cat.imageKey}.jpg` // 删掉开头的斜杠
-
-  if (!scene.textures.exists(cat.imageKey)) {
-    scene.load.image(cat.imageKey, imagePath)
-    scene.load.start()
-  }
+  const imageKey = cat.imageKey
+  // 使用相对路径（去掉了开头的斜杠）
+  const imagePath = `assets/${imageKey}.jpg`
 
   // 1. 黑色半透明遮罩
   const overlay = scene.add.rectangle(640, 360, 1280, 720, 0x000000, 0.8)
@@ -42,24 +39,24 @@ const imagePath = `assets/${cat.imageKey}.jpg` // 删掉开头的斜杠
   }).setOrigin(0.5)
   card.add(tag)
 
-  // 🌟 核心修复：用 RenderTexture 强行渲染图片
+  // 🌟 核心绘图函数
   const imgW = 380
   const imgH = 380 
   
   const drawImage = () => {
     const imgContainer = scene.add.container(0, imgY)
     
-    // 创建一个 380x380 的离屏渲染纹理（相当于一张白纸）
+    // 创建一个 380x380 的离屏渲染纹理
     const rt = scene.add.renderTexture(0, 0, imgW, imgH).setOrigin(0.5)
     
     // 获取原图，算好缩放比例
-    const tempImg = scene.add.image(0, 0, cat.imageKey).setVisible(false)
+    const tempImg = scene.add.image(0, 0, imageKey).setVisible(false)
     const scale = Math.max(imgW / tempImg.width, imgH / tempImg.height)
     tempImg.setScale(scale)
     
-    // 把缩放后的原图强行画到这张白纸的正中间
+    // 画到白纸上
     rt.draw(tempImg, imgW / 2, imgH / 2)
-    tempImg.destroy() // 画完就销毁原图
+    tempImg.destroy() 
 
     imgContainer.add(rt)
 
@@ -72,16 +69,27 @@ const imagePath = `assets/${cat.imageKey}.jpg` // 删掉开头的斜杠
     card.add(imgContainer)
   }
 
-  if (scene.textures.exists(cat.imageKey)) {
+  // 检查纹理是否已存在
+  if (scene.textures.exists(imageKey)) {
     drawImage()
   } else {
+    // 如果还没加载，先放个灰块占位
     const placeholder = scene.add.rectangle(0, imgY, imgW, imgH, 0xeeeeee).setStrokeStyle(2, 0xcccccc)
     card.add(placeholder)
     
-    scene.load.once(`filecomplete-image-${cat.imageKey}`, () => {
+    // 主动开始加载
+    scene.load.image(imageKey, imagePath)
+    
+    // 监听加载完成事件
+    scene.load.once(`filecomplete-image-${imageKey}`, () => {
       placeholder.destroy()
       drawImage()
     })
+    
+    // 万一在打开弹窗之前已经在加载队列里了，需要触发一下
+    if (!scene.load.isLoading()) {
+      scene.load.start()
+    }
   }
 
   // 名字
