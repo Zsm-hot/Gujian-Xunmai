@@ -35,7 +35,7 @@ export const woodLoadLevel: LoadLevelConfig = {
   ],
 
   capacity: 6,
-  targetSafeSeconds: 8,
+  targetSafeSeconds: 3,
   totalSeconds: 45,
   spawnInterval: 999999, // 不用它了
 
