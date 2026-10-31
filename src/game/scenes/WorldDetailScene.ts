@@ -40,15 +40,16 @@ export class WorldDetailScene extends Phaser.Scene {
   }
 
   private paintHeader() {
-    this.add.text(640, 60, this.world.name, { fontFamily: UI_FONT, fontSize: '40px', color: '#4a453f' }).setOrigin(0.5)
-    this.add.text(640, 108, '寻脉 · 世界内部', { fontFamily: UI_FONT, fontSize: '15px', color: '#7d6354' }).setOrigin(0.5)
-    textButton(this, 130, 60, '← 世界地图', () => { this.scene.start('WorldMapScene') })
+    this.add.text(640, 60, this.world.name, { fontFamily: UI_FONT, fontSize: '40px', color: '#4a453f' }).setOrigin(0.5).setDepth(10)
+    this.add.text(640, 108, '寻脉 · 世界内部', { fontFamily: UI_FONT, fontSize: '15px', color: '#7d6354' }).setOrigin(0.5).setDepth(10)
+    textButton(this, 130, 60, '← 世界地图', () => { this.scene.start('WorldMapScene') }).setDepth(10)
   }
 
   private paintLevelList() {
     const levels = this.world.levels ?? []
     const totalH = levels.length * CARD_H + (levels.length - 1) * GAP
-    const startY = 360 - totalH / 2 + CARD_H / 2
+    // 🌟 修改点：原来是在 360 居中，现在改成在 390 居中，让整个列表往下移一点，避开副标题
+    const startY = 390 - totalH / 2 + CARD_H / 2
 
     levels.forEach((lv, i) => {
       const x = 640
@@ -113,8 +114,8 @@ export class WorldDetailScene extends Phaser.Scene {
   private paintFooter() {
     const levels = this.world.levels ?? []
     const done = LevelProgress.countCompleted(levels.map((l) => l.id))
-    this.add.text(640, 680, `进度：${done} / ${levels.length}`, { fontFamily: UI_FONT, fontSize: '14px', color: '#7d6354' }).setOrigin(0.5).setAlpha(0.75)
-    textButton(this, 1150, 660, '图 鉴', () => { this.scene.start('CodexScene', { worldId: this.world.id }) })
+    this.add.text(640, 680, `进度：${done} / ${levels.length}`, { fontFamily: UI_FONT, fontSize: '14px', color: '#7d6354' }).setOrigin(0.5).setAlpha(0.75).setDepth(10)
+    textButton(this, 1150, 660, '图 鉴', () => { this.scene.start('CodexScene', { worldId: this.world.id }) }).setDepth(10)
   }
 
   private showToast(msg: string) {

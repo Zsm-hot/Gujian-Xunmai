@@ -5,17 +5,16 @@ import { textButton } from '../ui/panels.ts'
 import type { WorldEntry, WorldId } from '../types.ts'
 import { LevelProgress } from '../systems/LevelProgress.ts'
 import { renderCoinHUD } from '../systems/CoinSystem.ts'
-
-// 🌟 完美对齐的 8 个坐标
+// 🌟 坐标已优化：全部移入米黄色陆地板块，避开深海区
 const WORLD_POS: Record<WorldId, { x: number; y: number }> = {
   'forbidden-city':  { x: 1004, y: 234 },
-  'suzhou-garden':   { x: 1025, y: 301 },
-  'yingxian-pagoda': { x: 952,  y: 218 },
-  'egypt-pyramid':   { x: 734,  y: 352 },
-  'petra':           { x: 781,  y: 283 },
-  'dome-rock':       { x: 790,  y: 250 },
-  'angkor':          { x: 983,  y: 357 },
-  'machu-picchu':    { x: 417,  y: 527 },
+  'suzhou-garden':   { x: 1015,  y: 299 }, // 👈 往左移动了一点，不再悬空
+  'yingxian-pagoda': { x: 952,  y: 205 }, 
+  'egypt-pyramid':   { x: 720,  y: 365 }, // 👈 往下移动了一点，不挡佩特拉文字
+  'petra':           { x: 775,  y: 310 }, 
+  'dome-rock':       { x: 770,  y: 250 }, 
+  'angkor':          { x: 980,  y: 350 }, 
+  'machu-picchu':    { x: 420,  y: 505 }, 
 }
 
 const PATH_ORDER: WorldId[] = [
@@ -39,28 +38,21 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   create() {
-    // 1. 渲染你提供的唯美背景图
     if (this.textures.exists('world-map')) {
       this.add.image(640, 360, 'world-map').setDisplaySize(1280, 720).setDepth(0)
     } else {
       this.add.rectangle(640, 360, 1280, 720, 0xf4ecd6, 1)
     }
 
-    // 🌟 2. 叠加深海航海与卷轴质感层（高级渲染法）
     this.drawNauticalVibe()
-
-    // 3. 绘制交互层
     this.paintPath()
     this.paintWorlds()
     this.paintShipAndAnimate()
-    this.paintCompass(1180, 120)
     this.paintHeader()
     this.paintFooter()
 
-        // 🌟 渲染右上角的金币 HUD
     renderCoinHUD(this, 2000)
 
-    // 🌟 修改名字并拉开间距
     textButton(this, 880, 680, '云笺坊集', () => {
       this.scene.start('MarketScene')
     }).setDepth(50)
@@ -69,26 +61,19 @@ export class WorldMapScene extends Phaser.Scene {
     }).setDepth(50)
   }
 
-  // 🌟 核心新增：高级航海质感渲染
   private drawNauticalVibe() {
-    // A. 深海暗角（使用径向渐变，让边缘自然变暗，而不是生硬的方块）
     const vignette = this.add.graphics().setDepth(1)
-    // 顶部暗角
     vignette.fillGradientStyle(0x2d1c10, 0x2d1c10, 0x000000, 0x000000, 0.4, 0.4, 0, 0)
     vignette.fillRect(0, 0, 1280, 80)
-    // 底部暗角
     vignette.fillGradientStyle(0x000000, 0x000000, 0x2d1c10, 0x2d1c10, 0, 0, 0.4, 0.4)
     vignette.fillRect(0, 640, 1280, 80)
-    // 左侧暗角
     vignette.fillGradientStyle(0x2d1c10, 0x000000, 0x2d1c10, 0x000000, 0.4, 0, 0.4, 0)
     vignette.fillRect(0, 0, 80, 720)
-    // 右侧暗角
     vignette.fillGradientStyle(0x000000, 0x2d1c10, 0x000000, 0x2d1c10, 0, 0.4, 0, 0.4)
     vignette.fillRect(1200, 0, 80, 720)
 
-    // B. 罗盘玫瑰暗纹水印（用极淡的线，藏在太平洋里）
     const roseBg = this.add.graphics().setDepth(1)
-    roseBg.lineStyle(1.5, 0x8a6f3e, 0.08) // 透明度极低
+    roseBg.lineStyle(1.5, 0x8a6f3e, 0.08)
     const rcx = 920, rcy = 480, rR = 220
     roseBg.strokeCircle(rcx, rcy, rR)
     roseBg.strokeCircle(rcx, rcy, rR * 0.7)
@@ -101,7 +86,6 @@ export class WorldMapScene extends Phaser.Scene {
       roseBg.strokePath()
     }
 
-    // C. 经纬网格线（用虚线，增加寻宝图的探索感）
     const grid = this.add.graphics().setDepth(1)
     grid.lineStyle(1, 0x8a6f3e, 0.06)
     for (let x = 120; x < 1200; x += 120) {
@@ -111,19 +95,13 @@ export class WorldMapScene extends Phaser.Scene {
       grid.beginPath(); grid.moveTo(0, y); grid.lineTo(1280, y); grid.strokePath()
     }
 
-    // D. 卷轴边缘灼烧（用多个椭圆互相重叠，并且只在贴边的地方出现）
     const burnt = this.add.graphics().setDepth(2)
     burnt.fillStyle(0x2d1c10, 0.2)
-    // 上边缘
     for (let i = 0; i < 15; i++) burnt.fillEllipse(Phaser.Math.Between(0, 1280), 0, Phaser.Math.Between(80, 160), Phaser.Math.Between(20, 40))
-    // 下边缘
     for (let i = 0; i < 15; i++) burnt.fillEllipse(Phaser.Math.Between(0, 1280), 720, Phaser.Math.Between(80, 160), Phaser.Math.Between(20, 40))
-    // 左边缘
     for (let i = 0; i < 10; i++) burnt.fillEllipse(0, Phaser.Math.Between(0, 720), Phaser.Math.Between(20, 40), Phaser.Math.Between(80, 160))
-    // 右边缘
     for (let i = 0; i < 10; i++) burnt.fillEllipse(1280, Phaser.Math.Between(0, 720), Phaser.Math.Between(20, 40), Phaser.Math.Between(80, 160))
 
-    // E. 动态海上薄雾（呼吸感）
     const mist = this.add.rectangle(640, 360, 1280, 720, 0xffffff, 0.03).setDepth(3)
     this.tweens.add({
       targets: mist,
@@ -134,8 +112,6 @@ export class WorldMapScene extends Phaser.Scene {
       ease: 'Sine.easeInOut'
     })
   }
-
-  // ===== 以下所有绘制方法不变，仅为了保证层级正确，加上了 setDepth =====
 
   private paintPath() {
     const g = this.add.graphics().setDepth(10)
@@ -238,32 +214,29 @@ export class WorldMapScene extends Phaser.Scene {
     })
   }
 
-  private paintCompass(cx: number, cy: number) {
-    const g = this.add.graphics().setDepth(15)
-    const R = 46
-    g.lineStyle(2, 0x8a6f3e, 0.5); g.strokeCircle(cx, cy, R)
-    g.lineStyle(1, 0x8a6f3e, 0.35); g.strokeCircle(cx, cy, R - 6)
-
-    const drawNeedle = (angle: number, len: number, color: number, alpha: number) => {
-      const rad = (angle * Math.PI) / 180
-      const x2 = cx + Math.cos(rad) * len, y2 = cy + Math.sin(rad) * len
-      const xL = cx + Math.cos(rad + Math.PI / 2) * 6, yL = cy + Math.sin(rad + Math.PI / 2) * 6
-      const xR = cx + Math.cos(rad - Math.PI / 2) * 6, yR = cy + Math.sin(rad - Math.PI / 2) * 6
-      g.fillStyle(color, alpha); g.beginPath(); g.moveTo(x2, y2); g.lineTo(xL, yL); g.lineTo(xR, yR); g.closePath(); g.fillPath()
-    }
-    drawNeedle(-90, R - 10, 0x6a4a24, 0.85); drawNeedle(90, R - 18, 0x6a4a24, 0.5)
-    drawNeedle(0, R - 18, 0x8a6f3e, 0.45); drawNeedle(180, R - 18, 0x8a6f3e, 0.45)
-
-    g.fillStyle(0x6a4a24, 0.9); g.fillCircle(cx, cy, 3)
-    this.add.text(cx, cy - R - 12, 'N', { fontFamily: UI_FONT, fontSize: '14px', color: '#6a4a24' }).setOrigin(0.5).setAlpha(0.75).setDepth(15)
-  }
-
+  // 🌟 顶部标题 + 红色印章风格边框 + 白色文字
   private paintHeader() {
-    const g = this.add.graphics().setDepth(15)
-    g.lineStyle(1, 0x8a6f3e, 0.5); g.strokeRoundedRect(430, 20, 420, 50, 6)
-    g.lineStyle(1, 0x8a6f3e, 0.25); g.strokeRoundedRect(436, 26, 408, 38, 4)
+    const titleX = 640
+    const titleY = 45
+    const boxW = 420
+    const boxH = 50
+    const boxX = titleX - boxW / 2
+    const boxY = titleY - boxH / 2
 
-    this.add.text(640, 45, '八 方 寻 脉 · 世 界 图', { fontFamily: UI_FONT, fontSize: '22px', color: '#5a3a18' }).setOrigin(0.5).setDepth(16)
+    const g = this.add.graphics().setDepth(15)
+    // 外圈粗红框（类似印泥边框）
+    g.lineStyle(3, 0xa83232, 0.85)
+    g.strokeRoundedRect(boxX, boxY, boxW, boxH, 8)
+    // 内圈细金线
+    g.lineStyle(1, 0xd4a338, 0.4)
+    g.strokeRoundedRect(boxX + 4, boxY + 4, boxW - 8, boxH - 8, 4)
+
+    this.add.text(titleX, titleY, '八 方 寻 脉 · 世 界 图', { 
+      fontFamily: UI_FONT, 
+      fontSize: '22px', 
+      color: '#ffffff',       // 👈 改成了白色
+      fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(16).setShadow(1, 2, '#000000', 3) // 👈 加重了黑色阴影，保证白字清晰
 
     textButton(this, 130, 42, '← 标题', () => { this.scene.start('TitleScene') }).setDepth(16)
   }
@@ -277,6 +250,14 @@ export class WorldMapScene extends Phaser.Scene {
         fontFamily: UI_FONT, fontSize: '16px', color: '#4a3a24',
         backgroundColor: '#f3e8cfee', padding: { x: 16, y: 8 },
       }).setOrigin(0.5).setDepth(9999).setAlpha(0)
-    this.tweens.add({ targets: toast, alpha: 1, duration: 200, yoyo: true, hold: 1200, onComplete: () => toast.destroy() })
+    this.tweens.add({ 
+      targets: toast, 
+      alpha: 1, 
+      duration: 200, 
+      yoyo: true, 
+      hold: 1200, 
+      onComplete: () => toast.destroy() 
+    })
   }
 }
+
