@@ -20,6 +20,12 @@ export class IntroScene extends Phaser.Scene {
     super('IntroScene')
   }
 
+  // 加载阿筑的立绘
+  preload() {
+    // 确保图片保存在 public/assets/azhu.png
+    this.load.image('azhu-avatar', 'assets/azhu.png')
+  }
+
   create() {
     // ===== 背景 =====
     // ① 深蓝底色
@@ -94,6 +100,7 @@ export class IntroScene extends Phaser.Scene {
     }
 
     // ===== 阿筑 =====
+    // 1. 光晕
     const azhuGlow = this.add.circle(640, 180, 60, 0xd4a338, 0.2).setDepth(1).setAlpha(0)
     this.tweens.add({
       targets: azhuGlow,
@@ -105,14 +112,25 @@ export class IntroScene extends Phaser.Scene {
       ease: 'Sine.easeInOut',
     })
 
-    const azhuIcon = this.add
-      .text(640, 180, '🌸', { fontSize: '64px' })
-      .setOrigin(0.5)
-      .setDepth(2)
-      .setAlpha(0)
+       // 2. 完整显示原图，不裁剪
+       // 2. 完整显示原图，无边框无底色
+    let azhuAvatar: any
+    
+    if (this.textures.exists('azhu-avatar')) {
+      // 直接放置图片，定位在 (640, 180)
+      const img = this.add.image(640, 180, 'azhu-avatar').setDepth(2).setAlpha(0)
+      
+      // 调整图片大小，比如缩放到宽 160（你可以根据喜好改数字）
+      img.setDisplaySize(160, 160) 
+      
+      azhuAvatar = img
+    } else {
+      azhuAvatar = this.add.text(640, 180, '🌸', { fontSize: '64px' }).setOrigin(0.5).setDepth(2).setAlpha(0)
+    }
 
+    // 👇 名字位置稍微往下挪一点（如果图片变大了，这里可以改成 280）
     const azhuName = this.add
-      .text(640, 240, '阿 筑', {
+      .text(640, 280, '阿 筑', {
         fontFamily: UI_FONT,
         fontSize: '20px',
         color: '#d4a338',
@@ -123,7 +141,7 @@ export class IntroScene extends Phaser.Scene {
 
     // ===== 正文 =====
     this.textRef = this.add
-      .text(640, 380, '', {
+      .text(640, 400, '', {
         fontFamily: UI_FONT,
         fontSize: '22px',
         color: '#efe6d8',
@@ -136,7 +154,7 @@ export class IntroScene extends Phaser.Scene {
 
     // ===== 提示 =====
     const hint = this.add
-      .text(640, 600, '· 点 击 继 续 ·', {
+      .text(640, 620, '· 点 击 继 续 ·', {
         fontFamily: UI_FONT,
         fontSize: '14px',
         color: '#d4a338',
@@ -147,7 +165,7 @@ export class IntroScene extends Phaser.Scene {
 
     // ===== 入场动画 =====
     this.tweens.add({
-      targets: [azhuIcon, azhuName, azhuGlow],
+      targets: [azhuAvatar, azhuName, azhuGlow],
       alpha: 1,
       duration: 800,
       delay: 200,
