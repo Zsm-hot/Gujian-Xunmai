@@ -19,16 +19,18 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
-        background-color: #d4cfc4; /* 用你游戏的背景色，防止边缘留白难看 */
+        background-color: #d4cfc4; /* 这里用你游戏画布的颜色 */
       }
 
       /* 2. 让游戏容器铺满整个屏幕并居中 */
+      /* 2. 让游戏容器铺满整个屏幕并居中 */
       #app {
         width: 100vw;
-        height: 100vh;
+        height: 100vh; /* 强制占满整个视口高度 */
         display: flex;
         justify-content: center;
         align-items: center;
+        background-color: #d4cfc4;
       }
 
       /* 3. 竖屏时的旋转提示层（默认隐藏） */

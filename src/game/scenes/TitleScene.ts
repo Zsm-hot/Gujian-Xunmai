@@ -86,9 +86,33 @@ export class TitleScene extends Phaser.Scene {
       padding: { x: 10, y: 4 }
     }).setOrigin(0.5).setDepth(10)
 
-    // 🌟 6. 开发者测试后门：按键盘上的 E 键，直接看大结局！
+    // 🌟 6. 新增：手机全屏游玩按钮（放在右下角）
+    const fullscreenBtn = this.add.text(1230, 680, '⛶ 全屏游玩', {
+      fontFamily: UI_FONT,
+      fontSize: '14px',
+      color: '#ffffff',
+      backgroundColor: '#4a3020cc',
+      padding: { x: 8, y: 4 }
+    }).setOrigin(1, 0.5).setDepth(10).setInteractive({ useHandCursor: true })
+
+    fullscreenBtn.on('pointerdown', () => {
+      // 尝试触发浏览器的全屏 API
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.log('全屏失败:', err)
+        })
+      }
+    })
+
+    // 🌟 7. 开发者测试后门：电脑按 E 键，手机双击左上角跳大结局
     this.input.keyboard!.on('keydown-E', () => {
       AudioSystem.playSFX('success')
+      this.scene.start('EndingScene')
+    })
+    
+    // 手机测试后门：双击屏幕左上方 100x100 的隐藏区域
+    const devZone = this.add.zone(50, 50, 100, 100).setOrigin(0).setInteractive()
+    devZone.on('pointerdown', () => {
       this.scene.start('EndingScene')
     })
   }
