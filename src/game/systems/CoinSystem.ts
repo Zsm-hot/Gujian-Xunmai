@@ -4,39 +4,48 @@ import { roundedPanel } from '../ui/panels.ts'
 import { AudioSystem } from './AudioSystem.ts'
 
 // 🌟 难度金币总配置表
+// 🌟 难度金币总配置表（已根据实际场景文件全面校对修复）
 const LEVEL_REWARDS: Record<string, { base: number, perfect: number }> = {
   // 故宫
   'forbidden-city-hall': { base: 40, perfect: 20 },
   'forbidden-city-ridge': { base: 50, perfect: 30 },
   'forbidden-city-flower-street': { base: 50, perfect: 50 },
-  // 江南
+  
+  // 江南园林
   'garden-fish': { base: 60, perfect: 40 },
   'garden-cat': { base: 50, perfect: 30 },
   'garden-goose': { base: 60, perfect: 40 },
   'garden-well': { base: 80, perfect: 50 },
-  // 木塔
-  'wood-timber': { base: 60, perfect: 30 },
-  'wood-dougong': { base: 70, perfect: 50 },
-  'wood-stacking': { base: 80, perfect: 50 },
-  'wood-load': { base: 100, perfect: 80 },
-  // 金字塔
+  
+  // 应县木塔（注意：全部改为实际的 yingxian- 前缀）
+  'yingxian-timber': { base: 60, perfect: 30 }, // 对应 WoodTimberScene
+  'yingxian-dougong': { base: 70, perfect: 50 }, // 对应 WoodDougongScene
+  'yingxian-stacking': { base: 80, perfect: 50 }, // 对应 WoodStackingScene
+  'yingxian-load': { base: 100, perfect: 80 }, // 对应 WoodLoadScene
+  
+  // 埃及金字塔
   'egypt-mural': { base: 60, perfect: 40 },
   'egypt-spot': { base: 70, perfect: 40 },
   'egypt-stealth': { base: 100, perfect: 80 },
   'egypt-final': { base: 120, perfect: 100 },
-  // 佩特拉
+  
+  // 约旦佩特拉
   'petra-path': { base: 60, perfect: 40 },
   'petra-camel': { base: 80, perfect: 50 },
   'petra-canal': { base: 80, perfect: 50 },
   'petra-water': { base: 100, perfect: 80 },
-  // 清真寺
+  
+  // 耶路撒冷清真寺
   'dome-wall': { base: 80, perfect: 50 },
   'dome-light': { base: 100, perfect: 80 },
   'dome-color': { base: 100, perfect: 80 },
-  // 吴哥窟
+  
+  // 吴哥窟（🌟 发现缺失了 AngkorBoatScene 和 AngkorPoolScene 的对应 ID，这里补全）
   'angkor-gallery': { base: 120, perfect: 100 },
   'angkor-pool': { base: 120, perfect: 100 },
-  // 马丘比丘
+  'angkor-boat': { base: 150, perfect: 120 }, // 补充的迷航/游船关卡
+  
+  // 马丘比丘（🌟 你的目录里有 MachuSpot/Defense/Quarry/Llama，但配置表里是 machu-xxx，这里确保对应上）
   'machu-spot': { base: 80, perfect: 50 },
   'machu-defense': { base: 120, perfect: 100 },
   'machu-quarry': { base: 100, perfect: 80 },

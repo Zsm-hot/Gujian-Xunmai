@@ -436,8 +436,17 @@ export class WoodLoadScene extends Phaser.Scene {
     // 🌟 1. 先标记当前关卡通关
     LevelProgress.markCompleted(this.level.id)
     const isPerfect = true // 如果有红区计时变量，请替换
+    
+    // 👇 我加了一行 console.log，方便你在 F12 里查看到底有没有执行到这里
+    console.log('开始发放木塔荷载金币奖励...')
+    
     const reward = CoinSystem.rewardLevel(this.level.id, isPerfect)
+    
+    // 👇 如果 reward 是 0，说明被防刷机制拦截了（因为你之前通关过了）
+    console.log('获得金币数量：', reward)
+    
     CoinSystem.showFloatText(this, reward)
+    
     // 🌟 2. 判断应县木塔的所有关卡是否都已通关
     const currentWorld = worlds.find(w => w.id === 'yingxian-pagoda')
     if (currentWorld?.levels?.every(lv => LevelProgress.isCompleted(lv.id))) {

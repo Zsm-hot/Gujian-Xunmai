@@ -8,6 +8,8 @@ import { woodTimberLevel } from '../data/levels/wood-timber.ts'
 import { isoToScreen } from '../iso.ts'
 import type { TimberLevelConfig } from '../types.ts'
 import { CoinSystem } from '../systems/CoinSystem.ts'
+import { worlds } from '../data/worlds.ts'
+import { showCatPostcard } from '../ui/CatPostcardUI.ts'
 
 export class WoodTimberScene extends Phaser.Scene {
   private level!: TimberLevelConfig
@@ -19,7 +21,11 @@ export class WoodTimberScene extends Phaser.Scene {
   private placed: Set<string> = new Set()
 
   private draggingTimberId: string | null = null
-  private categoryPlacedCount: Map<string, number> = new Map()  
+  private categoryPlacedCount: Map<string, number> = new Map()
+
+  // ★ 记录放错次数，用于完美判定
+  private mistakes = 0
+
   constructor() {
     super('WoodTimberScene')
   }
@@ -32,6 +38,7 @@ export class WoodTimberScene extends Phaser.Scene {
     this.categoryNodes = new Map()
     this.placed = new Set()
     this.draggingTimberId = null
+    this.mistakes = 0
 
     this.categoryPlacedCount = new Map()
     for (const cat of this.level.categories) {
@@ -53,7 +60,7 @@ export class WoodTimberScene extends Phaser.Scene {
       '③ 关于斗拱：\n「无数细小榫咬合，木料过脆会崩口碎裂」',
     ]
 
-      // ★ 右侧提示区（面板加宽 + 字体加大）
+    // ★ 右侧提示区（面板加宽 + 字体加大）
     const panelX = 1080
     const panelW = 190
 
@@ -149,6 +156,7 @@ export class WoodTimberScene extends Phaser.Scene {
         this.checkComplete()
       } else {
         // 放错
+        this.mistakes += 1
         this.showToast(`「${timber.name}」不属于「${nearest.name}」`)
         this.returnTimberHome(node)
       }
@@ -243,7 +251,7 @@ export class WoodTimberScene extends Phaser.Scene {
     }
   }
 
-   private createTimberCard(
+  private createTimberCard(
     id: string,
     name: string,
     _icon: string,
@@ -605,6 +613,26 @@ export class WoodTimberScene extends Phaser.Scene {
   }
 
   private showSuccess() {
+    // 先标记通关
+    LevelProgress.markCompleted(this.level.id)
+
+    // 🌟 完美通关判定（放错次数为 0）
+    const isPerfect = this.mistakes === 0
+
+    // 🌟 发钱！和「花街寻窗」完全一致：无条件调用
+    const reward = CoinSystem.rewardLevel(this.level.id, isPerfect)
+    CoinSystem.showFloatText(this, reward) // 显示金币飘字
+
+    // 判断应县木塔全通关弹明信片
+    const currentWorld = worlds.find(w => w.id === 'yingxian-pagoda')
+    if (currentWorld && currentWorld.levels) {
+      const allCompleted = currentWorld.levels.every(lv => LevelProgress.isCompleted(lv.id))
+      if (allCompleted) {
+        showCatPostcard(this, 'yingxian-pagoda')
+      }
+    }
+
+    // 渲染成功面板
     this.add.rectangle(640, 360, 1280, 720, palette.ink, 0.38).setDepth(5000)
     roundedPanel(this, 310, 180, 660, 320).setDepth(5001)
     this.add
@@ -626,10 +654,17 @@ export class WoodTimberScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setDepth(5002)
 
-    LevelProgress.markCompleted(this.level.id)
- const isPerfect = true 
-    const reward = CoinSystem.rewardLevel(this.level.id, isPerfect)
-    CoinSystem.showFloatText(this, reward)
+    if (isPerfect) {
+      this.add
+        .text(640, 396, '· 完美通关 ·', {
+          fontFamily: UI_FONT,
+          fontSize: '14px',
+          color: '#b8894a',
+        })
+        .setOrigin(0.5)
+        .setDepth(5002)
+    }
+
     textButton(this, 640, 460, '返回世界', () => {
       this.scene.start('WorldDetailScene', { worldId: 'yingxian-pagoda' })
     }).setDepth(5002)

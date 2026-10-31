@@ -29,7 +29,7 @@ export class WoodDougongScene extends Phaser.Scene {
   private pieceX = 640
   private isDropping = false
   private slotRefs: Phaser.GameObjects.Container[] = []
-  
+
   // HUD 文字
   private hudStepText!: Phaser.GameObjects.Text
   private hudComboText!: Phaser.GameObjects.Text
@@ -79,7 +79,7 @@ export class WoodDougongScene extends Phaser.Scene {
   }
 
   // ===== 底部卡槽 =====
-   private buildSlots() {
+  private buildSlots() {
     for (const slot of this.level.slots) {
       const container = this.add.container(slot.x, SLOT_Y).setDepth(1000)
       this.slotRefs.push(container)
@@ -245,7 +245,7 @@ export class WoodDougongScene extends Phaser.Scene {
 
     // 创建一个 Container 包含斗拱
     this.currentPiece = this.add.container(this.pieceX, TOP_Y).setDepth(2000)
-    
+
     const g = this.add.graphics()
     shape.drawShape(g)
     this.currentPiece.add(g)
@@ -258,13 +258,13 @@ export class WoodDougongScene extends Phaser.Scene {
 
     // 开始下落
     this.isDropping = true
-     this.tweens.add({
+    this.tweens.add({
       targets: this.currentPiece,
       y: SLOT_Y,
-        duration: Math.max(
-      600,
-      FALL_DURATION_BASE - this.currentIndex * FALL_DURATION_STEP
-    ),
+      duration: Math.max(
+        600,
+        FALL_DURATION_BASE - this.currentIndex * FALL_DURATION_STEP
+      ),
       ease: 'Linear',
       onComplete: () => {
         this.checkLanding()
@@ -296,15 +296,15 @@ export class WoodDougongScene extends Phaser.Scene {
     if (isCorrect) {
       // 成功！
       this.combo += 1
-      
+
       // ★ 按"该槽已叠数量"决定"叠上去"的高度
       const slotId = targetSlot.id
       const stackH = this.stackHeight.get(slotId) ?? 0
-      const stackOffsetY = stackH * 28   // 每层错开 28px
+      const stackOffsetY = stackH * 28 // 每层错开 28px
 
       this.currentPiece.x = targetSlot.x
       this.currentPiece.y = SLOT_Y - stackOffsetY
-      this.currentPiece.setScale(1 - stackH * 0.05)   // 越往上越小一点
+      this.currentPiece.setScale(1 - stackH * 0.05) // 越往上越小一点
       this.currentPiece.setDepth(1100 + stackH)
 
       this.stackHeight.set(slotId, stackH + 1)
@@ -334,7 +334,7 @@ export class WoodDougongScene extends Phaser.Scene {
 
       this.currentIndex += 1
       this.refreshHud()
-      
+
       this.currentPiece = null as any
 
       this.time.delayedCall(400, () => this.spawnNextPiece())
@@ -455,6 +455,36 @@ export class WoodDougongScene extends Phaser.Scene {
   }
 
   private showSuccess() {
+    // ★ 完美判定：全程连击不断（combo === 总落榫数）即完美
+    const isPerfect = this.combo >= this.level.sequence.length
+
+    LevelProgress.markCompleted(this.level.id)
+    const reward = CoinSystem.rewardLevel(this.level.id, isPerfect)
+    CoinSystem.showFloatText(this, reward)
+
+    // ★ 金币轻提示（reward > 0 时在面板下方飘一下）
+    if (reward > 0) {
+      const coinTip = this.add
+        .text(640, 400, `🪙 获得金币 +${reward}${isPerfect ? '（完美）' : ''}`, {
+          fontFamily: UI_FONT,
+          fontSize: '20px',
+          color: '#b8860b',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0.5)
+        .setDepth(5002)
+        .setAlpha(0)
+      this.tweens.add({
+        targets: coinTip,
+        alpha: 1,
+        y: 390,
+        duration: 260,
+        yoyo: true,
+        hold: 1200,
+        onComplete: () => coinTip.destroy(),
+      })
+    }
+
     this.add.rectangle(640, 360, 1280, 720, palette.ink, 0.38).setDepth(5000)
     roundedPanel(this, 310, 180, 660, 320).setDepth(5001)
     this.add
@@ -476,10 +506,6 @@ export class WoodDougongScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setDepth(5002)
 
-    LevelProgress.markCompleted(this.level.id)
-   const isPerfect = true // 如果有连击或掉落次数变量，请替换
-    const reward = CoinSystem.rewardLevel(this.level.id, isPerfect)
-    CoinSystem.showFloatText(this, reward)
     textButton(this, 640, 460, '返回世界', () => {
       this.scene.start('WorldDetailScene', { worldId: 'yingxian-pagoda' })
     }).setDepth(5002)
@@ -510,7 +536,7 @@ export class WoodDougongScene extends Phaser.Scene {
       onComplete: () => t.destroy(),
     })
   }
-  
+
   // 完成
   private completeLevel() {
     if (this.completed) return
