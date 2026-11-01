@@ -5,15 +5,16 @@ import { textButton } from '../ui/panels.ts'
 import type { WorldEntry, WorldId } from '../types.ts'
 import { LevelProgress } from '../systems/LevelProgress.ts'
 import { renderCoinHUD } from '../systems/CoinSystem.ts'
-// 🌟 坐标已优化：全部移入米黄色陆地板块，避开深海区
+
+// 🌟 坐标已针对最新星空图微调，精准落在各大洲板块上
 const WORLD_POS: Record<WorldId, { x: number; y: number }> = {
   'forbidden-city':  { x: 1004, y: 234 },
-  'suzhou-garden':   { x: 1015,  y: 299 }, // 👈 往左移动了一点，不再悬空
+  'suzhou-garden':   { x: 995,  y: 301 }, 
   'yingxian-pagoda': { x: 952,  y: 205 }, 
-  'egypt-pyramid':   { x: 720,  y: 365 }, // 👈 往下移动了一点，不挡佩特拉文字
-  'petra':           { x: 775,  y: 310 }, 
+  'egypt-pyramid':   { x: 720,  y: 365 }, 
+  'petra':           { x: 775,  y: 295 }, 
   'dome-rock':       { x: 770,  y: 250 }, 
-  'angkor':          { x: 980,  y: 350 }, 
+  'angkor':          { x: 965,  y: 340 }, 
   'machu-picchu':    { x: 420,  y: 505 }, 
 }
 
@@ -34,14 +35,15 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('world-map', '/assets/world-map-bg.jpg')
+    // 确认后缀是 .png
+    this.load.image('world-map', '/assets/world-map bg.png')
   }
 
   create() {
     if (this.textures.exists('world-map')) {
       this.add.image(640, 360, 'world-map').setDisplaySize(1280, 720).setDepth(0)
     } else {
-      this.add.rectangle(640, 360, 1280, 720, 0xf4ecd6, 1)
+      this.add.rectangle(640, 360, 1280, 720, 0x0d1320, 1)
     }
 
     this.drawNauticalVibe()
@@ -62,50 +64,29 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   private drawNauticalVibe() {
-    const vignette = this.add.graphics().setDepth(1)
-    vignette.fillGradientStyle(0x2d1c10, 0x2d1c10, 0x000000, 0x000000, 0.4, 0.4, 0, 0)
-    vignette.fillRect(0, 0, 1280, 80)
-    vignette.fillGradientStyle(0x000000, 0x000000, 0x2d1c10, 0x2d1c10, 0, 0, 0.4, 0.4)
-    vignette.fillRect(0, 640, 1280, 80)
-    vignette.fillGradientStyle(0x2d1c10, 0x000000, 0x2d1c10, 0x000000, 0.4, 0, 0.4, 0)
-    vignette.fillRect(0, 0, 80, 720)
-    vignette.fillGradientStyle(0x000000, 0x2d1c10, 0x000000, 0x2d1c10, 0, 0.4, 0, 0.4)
-    vignette.fillRect(1200, 0, 80, 720)
+    const starGraphic = this.add.graphics()
+    starGraphic.fillStyle(0xffffff, 1)
+    starGraphic.fillCircle(3, 3, 3)
+    starGraphic.generateTexture('star-particle', 6, 6)
+    starGraphic.destroy()
 
-    const roseBg = this.add.graphics().setDepth(1)
-    roseBg.lineStyle(1.5, 0x8a6f3e, 0.08)
-    const rcx = 920, rcy = 480, rR = 220
-    roseBg.strokeCircle(rcx, rcy, rR)
-    roseBg.strokeCircle(rcx, rcy, rR * 0.7)
-    roseBg.strokeCircle(rcx, rcy, rR * 0.4)
-    for (let i = 0; i < 16; i++) {
-      const angle = (i * Math.PI) / 8
-      roseBg.beginPath()
-      roseBg.moveTo(rcx, rcy)
-      roseBg.lineTo(rcx + Math.cos(angle) * rR, rcy + Math.sin(angle) * rR)
-      roseBg.strokePath()
-    }
+    this.add.particles(0, 0, 'star-particle', {
+      x: { min: 0, max: 1280 },
+      y: { min: 0, max: 720 },
+      lifespan: 4000,
+      speedY: { min: -10, max: -30 },
+      speedX: { min: -10, max: 10 },
+      scale: { start: 0.2, end: 0.8, ease: 'Sine.easeInOut' },
+      alpha: { start: 0, end: 0.8, ease: 'Sine.easeInOut' },
+      quantity: 1,
+      blendMode: 'ADD',
+      frequency: 200,
+    }).setDepth(1)
 
-    const grid = this.add.graphics().setDepth(1)
-    grid.lineStyle(1, 0x8a6f3e, 0.06)
-    for (let x = 120; x < 1200; x += 120) {
-      grid.beginPath(); grid.moveTo(x, 0); grid.lineTo(x, 720); grid.strokePath()
-    }
-    for (let y = 120; y < 720; y += 120) {
-      grid.beginPath(); grid.moveTo(0, y); grid.lineTo(1280, y); grid.strokePath()
-    }
-
-    const burnt = this.add.graphics().setDepth(2)
-    burnt.fillStyle(0x2d1c10, 0.2)
-    for (let i = 0; i < 15; i++) burnt.fillEllipse(Phaser.Math.Between(0, 1280), 0, Phaser.Math.Between(80, 160), Phaser.Math.Between(20, 40))
-    for (let i = 0; i < 15; i++) burnt.fillEllipse(Phaser.Math.Between(0, 1280), 720, Phaser.Math.Between(80, 160), Phaser.Math.Between(20, 40))
-    for (let i = 0; i < 10; i++) burnt.fillEllipse(0, Phaser.Math.Between(0, 720), Phaser.Math.Between(20, 40), Phaser.Math.Between(80, 160))
-    for (let i = 0; i < 10; i++) burnt.fillEllipse(1280, Phaser.Math.Between(0, 720), Phaser.Math.Between(20, 40), Phaser.Math.Between(80, 160))
-
-    const mist = this.add.rectangle(640, 360, 1280, 720, 0xffffff, 0.03).setDepth(3)
+    const mist = this.add.rectangle(640, 360, 1280, 720, 0xffffff, 0.02).setDepth(3)
     this.tweens.add({
       targets: mist,
-      alpha: 0.08,
+      alpha: 0.06,
       duration: 5000,
       yoyo: true,
       repeat: -1,
@@ -115,7 +96,7 @@ export class WorldMapScene extends Phaser.Scene {
 
   private paintPath() {
     const g = this.add.graphics().setDepth(10)
-    g.lineStyle(2.4, 0xb8894a, 0.72)
+    g.lineStyle(2.4, 0x88ccff, 0.5) 
     for (let i = 0; i < PATH_ORDER.length - 1; i++) {
       const from = WORLD_POS[PATH_ORDER[i]]
       const to = WORLD_POS[PATH_ORDER[i + 1]]
@@ -123,7 +104,7 @@ export class WorldMapScene extends Phaser.Scene {
     }
     for (const id of PATH_ORDER) {
       const p = WORLD_POS[id]
-      g.fillStyle(0xb8894a, 0.7); g.fillCircle(p.x, p.y, 3)
+      g.fillStyle(0x88ccff, 0.8); g.fillCircle(p.x, p.y, 3)
     }
   }
 
@@ -150,71 +131,164 @@ export class WorldMapScene extends Phaser.Scene {
     }
   }
 
+  // 🌟 核心重写：红褐色字 + 耀眼金光
   private paintWorldSeal(world: WorldEntry, x: number, y: number) {
     const isPlayable = world.status === 'playable'
-    const stampColor = isPlayable ? 0xa83232 : 0x8a7a5c
-    const labelColor = isPlayable ? '#7a1f1f' : '#5a4a34'
+    const goldColor = 0xffd700 // 金黄色
+    const textColor = isPlayable ? '#8b2500' : '#6a5a3c' // 朱砂红褐
 
+    const container = this.add.container(x, y).setDepth(12)
+
+    // 1. 2.5D 悬浮阴影
+    const shadow = this.add.ellipse(0, 25, 40, 12, 0x000000, 0.3)
+    container.add(shadow)
+
+    // 2. 动态金色光晕（使用发光叠加模式，非常亮眼）
     if (isPlayable) {
-      const glow = this.add.circle(x, y, 26, 0xd4a338, 0.22).setDepth(11)
-      this.tweens.add({ targets: glow, scale: 1.5, alpha: 0.05, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' })
+      const glow = this.add.circle(0, 0, 22, goldColor, 0.16)
+      glow.setBlendMode(Phaser.BlendModes.ADD)
+      container.add(glow)
+      this.tweens.add({ 
+        targets: glow, 
+        scale: 1.1, 
+        alpha: 0.05, 
+        duration: 1800, 
+        yoyo: true, 
+        repeat: -1, 
+        ease: 'Sine.easeInOut' 
+      })
     }
 
-    const ring = this.add.graphics().setDepth(12)
-    ring.lineStyle(2, stampColor, isPlayable ? 0.9 : 0.6); ring.strokeCircle(x, y, isPlayable ? 17 : 13)
-    ring.lineStyle(1, stampColor, isPlayable ? 0.6 : 0.35); ring.strokeCircle(x, y, isPlayable ? 12 : 9)
+       // 3. 图章外圈（改成和文字一致的朱砂红褐）
+    const ring = this.add.graphics()
+    ring.lineStyle(2.5, 0x8b2500, isPlayable ? 1 : 0.6) // 👈 改了颜色
+    ring.strokeCircle(0, 0, isPlayable ? 17 : 13)
+    ring.lineStyle(1, 0x8b2500, isPlayable ? 0.8 : 0.35) // 👈 改了颜色
+    ring.strokeCircle(0, 0, isPlayable ? 12 : 9)
+    container.add(ring)
 
-    this.add.text(x, y, WORLD_GLYPH[world.id], { fontFamily: UI_FONT, fontSize: isPlayable ? '14px' : '11px', color: isPlayable ? '#7a1f1f' : '#6a5a3c' }).setOrigin(0.5).setDepth(12)
+    // 4. 图章内的汉字
+    const glyph = this.add.text(0, 0, WORLD_GLYPH[world.id], { 
+      fontFamily: UI_FONT, 
+      fontSize: isPlayable ? '14px' : '11px', 
+      color: textColor,
+      fontStyle: 'bold'
+    }).setOrigin(0.5)
+    container.add(glyph)
 
-    const line = this.add.graphics().setDepth(12)
-    line.lineStyle(1, stampColor, isPlayable ? 0.7 : 0.45)
-    line.beginPath(); line.moveTo(x, y + (isPlayable ? 17 : 13)); line.lineTo(x, y + (isPlayable ? 22 : 18)); line.strokePath()
+    // 5. 连接线（也改成红褐色，保持整体一致）
+    const line = this.add.graphics()
+    line.lineStyle(1.5, 0x8b2500, isPlayable ? 0.9 : 0.45) // 👈 改了颜色
+    line.beginPath(); 
+    line.moveTo(0, isPlayable ? 17 : 13)
+    line.lineTo(0, isPlayable ? 22 : 18)
+    line.strokePath()
+    container.add(line)
 
-    const label = this.add.text(x, y + (isPlayable ? 26 : 20), world.name, { fontFamily: UI_FONT, fontSize: isPlayable ? '14px' : '12px', color: labelColor }).setOrigin(0.5, 0).setDepth(12)
+    // 6. 世界名称文字（红褐）
+    const label = this.add.text(0, isPlayable ? 26 : 20, world.name, { 
+      fontFamily: UI_FONT, 
+      fontSize: isPlayable ? '15px' : '12px', 
+      color: textColor,
+      fontStyle: isPlayable ? 'bold' : 'normal'
+    }).setOrigin(0.5, 0)
 
+    // 🌟 增加金色外发光，让红褐色字更醒目
+    if (isPlayable) {
+      label.setShadow(0, 0, '#ffd700', 6, true, true)
+    }
+    container.add(label)
+
+    // 7. 状态文字（可入 / 已通关）
     if (isPlayable) {
       let done = false
       if (world.levels && world.levels.length > 0) {
-        const allDone = world.levels.every((lv) => LevelProgress.isCompleted(lv.id))
-        if (allDone) done = true
+        done = world.levels.every((lv) => LevelProgress.isCompleted(lv.id))
       }
-      this.add.text(x, y - (isPlayable ? 24 : 20), done ? '✓ 已通关' : '可 入', { fontFamily: UI_FONT, fontSize: '11px', color: done ? '#5a8a4a' : '#b8894a' }).setOrigin(0.5, 1).setDepth(12)
+      const statusText = done ? '✓ 已通关' : '可 入'
+      const statusColor = done ? '#2e8b57' : '#8b2500'
+      
+      const statusTxt = this.add.text(0, isPlayable ? -24 : -20, statusText, { 
+        fontFamily: UI_FONT, 
+        fontSize: '12px', 
+        color: statusColor,
+        fontStyle: 'bold'
+      }).setOrigin(0.5, 1)
+      // 状态文字也加金色发光
+      statusTxt.setShadow(0, 0, '#ffd700',4, true, true)
+      container.add(statusTxt)
     } else {
-      const mist = this.add.circle(x, y, 22, 0x8a6f3e, 0.16).setDepth(12)
+      const mist = this.add.circle(0, 0, 22, 0x8a6f3e, 0.16)
       this.tweens.add({ targets: mist, alpha: 0.05, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' })
-      this.add.text(x, y - 18, '待 寻', { fontFamily: UI_FONT, fontSize: '11px', color: '#8a7a5c' }).setOrigin(0.5, 1).setDepth(12)
+      container.add(mist)
+      
+      const statusTxt = this.add.text(0, -18, '待 寻', { fontFamily: UI_FONT, fontSize: '11px', color: '#8a7a5c' }).setOrigin(0.5, 1)
+      container.add(statusTxt)
     }
 
+    // 8. 2.5D 悬浮动画 + 文字跳动
     if (isPlayable) {
-      const hit = this.add.circle(x, y, 24, 0x000000, 0.001).setInteractive({ useHandCursor: true }).setDepth(20)
-      hit.on('pointerover', () => label.setColor('#c4884a'))
-      hit.on('pointerout', () => label.setColor(labelColor))
+      this.tweens.add({
+        targets: container,
+        y: y - 8, 
+        duration: 2000 + Math.random() * 500,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      })
+
+      this.tweens.add({
+        targets: shadow,
+        scaleX: 0.8,
+        scaleY: 0.8,
+        alpha: 0.1,
+        duration: 2000 + Math.random() * 500,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      })
+
+      this.tweens.add({
+        targets: [label, glyph],
+        scale: 1.05,
+        alpha: 0.85,
+        duration: 800 + Math.random() * 400,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      })
+    }
+
+    // 9. 交互热区
+    if (isPlayable) {
+      const hit = this.add.circle(0, 0, 28, 0x000000, 0.001).setInteractive({ useHandCursor: true })
+      hit.on('pointerover', () => label.setColor('#ff4500')) // 悬停时变成亮橙红色
+      hit.on('pointerout', () => label.setColor(textColor))
       hit.on('pointerup', () => this.scene.start('WorldDetailScene', { worldId: world.id }))
+      container.add(hit)
     } else {
-      const hit = this.add.circle(x, y, 20, 0x000000, 0.001).setInteractive({ useHandCursor: true }).setDepth(20)
+      const hit = this.add.circle(0, 0, 20, 0x000000, 0.001).setInteractive({ useHandCursor: true })
       hit.on('pointerup', () => this.showToast(`${world.name} · 尚未开启`))
+      container.add(hit)
     }
   }
 
   private paintShipAndAnimate() {
     const ship = this.add.container(0, 0).setDepth(15)
     const g = this.add.graphics()
-    g.fillStyle(0x6a4a24, 1); g.fillTriangle(-10, 0, 10, 0, 0, 8)
-    g.lineStyle(1, 0x3a2a14, 0.9); g.strokeTriangle(-10, 0, 10, 0, 0, 8)
-    g.lineStyle(1.2, 0x3a2a14, 0.9); g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -14); g.strokePath()
-    g.fillStyle(0xf3e8cf, 0.9); g.fillTriangle(0, -14, 0, -4, 8, -9)
+    g.fillStyle(0xffd700, 1); g.fillTriangle(-8, 0, 8, 0, 0, 6)
+    g.lineStyle(1, 0xffffff, 0.8); g.strokeTriangle(-8, 0, 8, 0, 0, 6)
     ship.add(g)
 
     this.tweens.add({
       targets: ship,
       x: { from: WORLD_POS['machu-picchu'].x, to: WORLD_POS['forbidden-city'].x },
       y: { from: WORLD_POS['machu-picchu'].y, to: WORLD_POS['forbidden-city'].y },
-      duration: 10000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
-      onUpdate: () => { ship.setRotation(Math.sin(ship.x * 0.05) * 0.08) },
+      duration: 12000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      onUpdate: () => { ship.setRotation(Math.sin(ship.x * 0.05) * 0.1) },
     })
   }
 
-  // 🌟 顶部标题 + 红色印章风格边框 + 白色文字
   private paintHeader() {
     const titleX = 640
     const titleY = 45
@@ -224,31 +298,29 @@ export class WorldMapScene extends Phaser.Scene {
     const boxY = titleY - boxH / 2
 
     const g = this.add.graphics().setDepth(15)
-    // 外圈粗红框（类似印泥边框）
     g.lineStyle(3, 0xa83232, 0.85)
     g.strokeRoundedRect(boxX, boxY, boxW, boxH, 8)
-    // 内圈细金线
     g.lineStyle(1, 0xd4a338, 0.4)
     g.strokeRoundedRect(boxX + 4, boxY + 4, boxW - 8, boxH - 8, 4)
 
     this.add.text(titleX, titleY, '八 方 寻 脉 · 世 界 图', { 
       fontFamily: UI_FONT, 
       fontSize: '22px', 
-      color: '#ffffff',       // 👈 改成了白色
+      color: '#ffffff',
       fontStyle: 'bold'
-    }).setOrigin(0.5).setDepth(16).setShadow(1, 2, '#000000', 3) // 👈 加重了黑色阴影，保证白字清晰
+    }).setOrigin(0.5).setDepth(16).setShadow(1, 2, '#000000', 3)
 
     textButton(this, 130, 42, '← 标题', () => { this.scene.start('TitleScene') }).setDepth(16)
   }
 
   private paintFooter() {
-    this.add.text(640, 680, '八枚文明印记 · 汇合于《营造之书》', { fontFamily: UI_FONT, fontSize: '13px', color: '#7a5a34' }).setOrigin(0.5).setAlpha(0.75).setDepth(15)
+    this.add.text(640, 680, '八枚文明印记 · 汇合于《营造之书》', { fontFamily: UI_FONT, fontSize: '13px', color: '#ffffff' }).setOrigin(0.5).setAlpha(0.5).setDepth(15)
   }
 
   private showToast(msg: string) {
     const toast = this.add.text(640, 600, msg, {
-        fontFamily: UI_FONT, fontSize: '16px', color: '#4a3a24',
-        backgroundColor: '#f3e8cfee', padding: { x: 16, y: 8 },
+        fontFamily: UI_FONT, fontSize: '16px', color: '#ffffff',
+        backgroundColor: '#000000aa', padding: { x: 16, y: 8 },
       }).setOrigin(0.5).setDepth(9999).setAlpha(0)
     this.tweens.add({ 
       targets: toast, 
@@ -260,4 +332,3 @@ export class WorldMapScene extends Phaser.Scene {
     })
   }
 }
-
