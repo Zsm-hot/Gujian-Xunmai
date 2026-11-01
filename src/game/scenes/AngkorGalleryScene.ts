@@ -13,6 +13,7 @@ const PLAYER_Y = 550
 const BASE_SPEED = 400         
 const MAX_SPEED = 800          
 const ACCELERATION = 15        
+const SURVIVAL_TIME = 25000    
 
 export class AngkorGalleryScene extends Phaser.Scene {
   private completed = false
@@ -23,6 +24,9 @@ export class AngkorGalleryScene extends Phaser.Scene {
   private shield = 3 
   private score = 0  
   private currentSpeed = BASE_SPEED 
+
+  private startTime = 0
+  private timeText!: Phaser.GameObjects.Text
 
   private shieldText!: Phaser.GameObjects.Text
   private scoreText!: Phaser.GameObjects.Text
@@ -46,19 +50,30 @@ export class AngkorGalleryScene extends Phaser.Scene {
     this.score = 0
     this.currentSpeed = BASE_SPEED
     this.groundLines = []
+    
+    this.startTime = this.time.now
+
+    // 🌟 核心修复 1：关闭全局重力，防止隐形物体掉落
+    this.physics.world.gravity.y = 0
 
     this.textures.generate('pixel', { data: ['0'], pixelWidth: 1, pixelHeight: 1 })
     this.textures.generate('player', { data: ['1'], pixelWidth: 40, pixelHeight: 60 })
 
     this.drawCorridorBackground()
 
-    this.obstacles = this.physics.add.group()
-    this.collectibles = this.physics.add.group()
+    this.obstacles = this.physics.add.group({ allowGravity: false, immovable: true })
+    this.collectibles = this.physics.add.group({ allowGravity: false, immovable: true })
 
     this.createPlayer()
 
-    this.physics.add.overlap(this.player, this.obstacles, this.hitObstacle, undefined, this)
-    this.physics.add.overlap(this.player, this.collectibles, this.collectShard, undefined, this)
+    // 🌟 核心修复 2：确保只有当前活跃的障碍物才会触发碰撞
+    this.physics.add.overlap(this.player, this.obstacles, this.hitObstacle, (_player, obs) => {
+      return !this.completed && (obs as Phaser.Physics.Arcade.Sprite).active
+    }, this)
+
+    this.physics.add.overlap(this.player, this.collectibles, this.collectShard, (_player, shard) => {
+      return !this.completed && (shard as Phaser.Physics.Arcade.Sprite).active
+    }, this)
 
     this.buildUI()
 
@@ -95,6 +110,10 @@ export class AngkorGalleryScene extends Phaser.Scene {
     this.player.setTint(0xd4a338)
     this.player.setDepth(100)
     this.player.body!.setSize(40, 60)
+    // 🌟 确保玩家不受重力影响，且不发生被动位移
+      // 用方法调用来设置
+    ;(this.player.body as Phaser.Physics.Arcade.Body).setAllowGravity(false)
+    ;(this.player.body as Phaser.Physics.Arcade.Body).setImmovable(true)
     
     const pG = this.add.graphics()
     pG.fillStyle(0xd4a338, 1)
@@ -110,15 +129,19 @@ export class AngkorGalleryScene extends Phaser.Scene {
   }
 
   private buildUI() {
-    roundedPanel(this, 28, 24, 300, 120).setDepth(2000)
+    roundedPanel(this, 28, 24, 300, 140).setDepth(2000)
     this.add.text(48, 38, `${LEVEL.chapter} · ${LEVEL.title}`, { fontFamily: UI_FONT, fontSize: '18px', color: '#4a453f' }).setDepth(2001)
     this.shieldText = this.add.text(48, 70, '叙事屏障: 🛡️🛡️🛡️', { fontFamily: UI_FONT, fontSize: '18px', color: '#8c2b2b', fontStyle: 'bold' }).setDepth(2001)
     this.scoreText = this.add.text(48, 100, '残片收集: 0', { fontFamily: UI_FONT, fontSize: '16px', color: '#d4a338', fontStyle: 'bold' }).setDepth(2001)
+    
+    this.timeText = this.add.text(48, 126, `逃生倒计时: ${(SURVIVAL_TIME/1000).toFixed(1)}s`, { fontFamily: UI_FONT, fontSize: '16px', color: '#e8dcc8', fontStyle: 'bold' }).setDepth(2001)
+
     this.add.text(1150, 40, 'A/D 左右变道\nW 跳跃\nS 滑铲', { fontFamily: UI_FONT, fontSize: '14px', color: '#e8dcc8', align: 'right', backgroundColor: '#000000aa', padding: {x:10, y:10} }).setOrigin(1, 0).setDepth(2001)
   }
 
   update(_time: number, delta: number) {
     if (this.completed) return
+    
     this.currentSpeed = Math.min(this.currentSpeed + ACCELERATION * delta / 1000, MAX_SPEED)
 
     this.groundLines.forEach(line => {
@@ -133,19 +156,30 @@ export class AngkorGalleryScene extends Phaser.Scene {
     this.chaserG.fillStyle(0x8c2b2b, 0.2 + Math.sin(_time / 200) * 0.1)
     this.chaserG.fillRect(0, 650, 1280, 70)
 
+    // 更新障碍物
     this.obstacles.getChildren().forEach((child) => {
       const obj = child as Phaser.Physics.Arcade.Sprite
-      obj.y += this.currentSpeed * delta / 1000
-      if (obj.y > 750) obj.destroy()
+      if (obj.active) {
+        obj.y += this.currentSpeed * delta / 1000
+        if (obj.y > 750) obj.destroy()
+      }
     })
 
+    // 更新收集物
     this.collectibles.getChildren().forEach((child) => {
       const obj = child as Phaser.Physics.Arcade.Sprite
-      obj.y += this.currentSpeed * delta / 1000
-      if (obj.y > 750) obj.destroy()
+      if (obj.active) {
+        obj.y += this.currentSpeed * delta / 1000
+        if (obj.y > 750) obj.destroy()
+      }
     })
 
-    if (_time > 25000 && !this.completed) {
+    // 🌟 核心修复 3：更严谨的计时方式
+    const elapsed = this.time.now - this.startTime
+    const timeLeft = Math.max(0, SURVIVAL_TIME - elapsed)
+    this.timeText.setText(`逃生倒计时: ${(timeLeft / 1000).toFixed(1)}s`)
+
+    if (elapsed >= SURVIVAL_TIME) {
       this.completeLevel()
     }
   }
@@ -206,13 +240,19 @@ export class AngkorGalleryScene extends Phaser.Scene {
     if (this.completed) return
     const obs = this.obstacles.create(LANE_X[lane], y, 'pixel') as Phaser.Physics.Arcade.Sprite
     obs.setDepth(80)
+    obs.setActive(true)
+    obs.setVisible(true)
     
     if (type === 'jump') {
-      obs.setTint(0x5c574f); obs.body!.setSize(50, 40); obs.setData('type', 'jump')
+      obs.setTint(0x5c574f); 
+      obs.body!.setSize(50, 40); 
+      obs.setData('type', 'jump')
       const g = this.add.graphics(); g.fillStyle(0x6a6a5a, 1); g.fillCircle(0, 0, 25); g.lineStyle(2, 0x3a3a2a, 1); g.strokeCircle(0, 0, 25)
       obs.setData('visual', g)
     } else {
-      obs.setTint(0x8c3b2b); obs.body!.setSize(50, 20); obs.setData('type', 'slide')
+      obs.setTint(0x8c3b2b); 
+      obs.body!.setSize(50, 20); 
+      obs.setData('type', 'slide')
       const g = this.add.graphics(); g.fillStyle(0x8c3b2b, 1); g.fillRect(-30, -10, 60, 20); g.lineStyle(2, 0x4a1b0b, 1); g.strokeRect(-30, -10, 60, 20)
       obs.setData('visual', g)
     }
@@ -228,6 +268,8 @@ export class AngkorGalleryScene extends Phaser.Scene {
     if (this.completed) return
     const shard = this.collectibles.create(LANE_X[lane], y, 'pixel') as Phaser.Physics.Arcade.Sprite
     shard.setDepth(80).setTint(0xffd700)
+    shard.setActive(true)
+    shard.setVisible(true)
     shard.body!.setSize(30, 30)
     
     const g = this.add.graphics()
@@ -242,12 +284,13 @@ export class AngkorGalleryScene extends Phaser.Scene {
   }
 
   private hitObstacle(_player: any, obs: any) {
-    if (this.completed) return
+    if (this.completed || !obs.active) return
     const type = obs.getData('type')
     if ((type === 'jump' && this.isJumping) || (type === 'slide' && this.isSliding)) return 
 
     if (!obs.getData('hit')) {
       obs.setData('hit', true)
+      obs.setActive(false) // 🌟 立即标记为不可用，防止瞬间多次触发
       this.shield--
       this.updateShieldUI()
       this.cameras.main.shake(200, 0.02)
@@ -262,7 +305,8 @@ export class AngkorGalleryScene extends Phaser.Scene {
   }
 
   private collectShard(_player: any, shard: any) {
-    if (this.completed) return
+    if (this.completed || !shard.active) return
+    shard.setActive(false) // 🌟 立即标记为不可用
     this.score++
     this.scoreText.setText(`残片收集: ${this.score}`)
     this.cameras.main.flash(100, 255, 215, 0, false)
