@@ -31,6 +31,11 @@ export class AngkorPoolScene extends Phaser.Scene {
     super('AngkorPoolScene')
   }
 
+  // 🌟 添加 preload 加载背景图
+  preload() {
+    this.load.image('pond-bg', 'assets/pond-bg.jpg')
+  }
+
   create() {
     this.overlayOpen = false
     this.completed = false
@@ -79,12 +84,22 @@ export class AngkorPoolScene extends Phaser.Scene {
     })
   }
 
+  // 🌟 重构背景渲染：使用锦鲤图并去除原本生硬的黑框
   private paintBackground() {
-    this.add.rectangle(640, 360, 1280, 720, 0x2d2a26, 1).setDepth(-10)
+    if (this.textures.exists('pond-bg')) {
+      // 1. 铺设锦鲤水面
+      this.add.image(640, 360, 'pond-bg').setDisplaySize(1280, 720).setDepth(-10)
+      
+      // 2. 压暗背景，确保音符清晰
+      this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.45).setDepth(-9)
+    } else {
+      // 兜底
+      this.add.rectangle(640, 360, 1280, 720, 0x2d2a26, 1).setDepth(-10)
+    }
+
+    // 3. 绘制淡化的判定轨道线（不再有黑框）
     const g = this.add.graphics().setDepth(-5)
-    g.fillStyle(0x1a1816, 1)
-    g.fillRect(420, 100, 440, 520)
-    g.lineStyle(2, 0x4a463f, 1)
+    g.lineStyle(2, 0xd4a338, 0.3) // 改成半透明的暗金色，更符合水面波光
     LANE_X.forEach(x => {
       g.beginPath(); g.moveTo(x, 100); g.lineTo(x, 620); g.strokePath()
     })
@@ -105,10 +120,11 @@ export class AngkorPoolScene extends Phaser.Scene {
   private buildLanes() {
     LANE_X.forEach((x, i) => {
       this.add.text(x, 620, ['A', 'S', 'D', 'F'][i], {
-        fontFamily: UI_FONT, fontSize: '24px', color: '#8898aa'
+        fontFamily: UI_FONT, fontSize: '24px', color: '#e8dcc8'
       }).setOrigin(0.5).setDepth(100)
 
-      const ring = this.add.circle(x, HIT_Y, 30).setStrokeStyle(4, 0x8898aa, 0.5).setDepth(10)
+      // 🌟 判定圈改成了更通透的亮色描边
+      const ring = this.add.circle(x, HIT_Y, 30).setStrokeStyle(4, 0xffffff, 0.6).setDepth(10)
       ring.setInteractive({ useHandCursor: true })
       ring.on('pointerdown', () => this.pressLane(i))
     })
@@ -118,8 +134,10 @@ export class AngkorPoolScene extends Phaser.Scene {
     const barX = [100, 220, 1060, 1180]
     barX.forEach((x, i) => {
       this.add.text(x, 600, `第${i + 1}池`, { fontFamily: UI_FONT, fontSize: '14px', color: '#e8dcc8' }).setOrigin(0.5).setDepth(10)
-      const bg = this.add.rectangle(x, 350, 30, 400, 0x1a1816).setDepth(10)
-      bg.setStrokeStyle(2, 0x4a463f)
+      
+      // 🌟 水池边框也做了透明化处理，避免太突兀
+      const bg = this.add.rectangle(x, 350, 30, 400, 0x000000, 0.5).setDepth(10)
+      bg.setStrokeStyle(2, 0xffffff, 0.4)
       const levelG = this.add.graphics().setDepth(11)
       this.waterBars.push(levelG)
     })
@@ -138,7 +156,7 @@ export class AngkorPoolScene extends Phaser.Scene {
       if (val > 80) color = 0x8c2b2b
       if (val < 20) color = 0x4a463f
 
-      g.fillStyle(color, 0.8)
+      g.fillStyle(color, 0.9)
       g.fillRect(barX[i] - 13, y, 26, h)
     })
   }
@@ -148,11 +166,11 @@ export class AngkorPoolScene extends Phaser.Scene {
     const lane = Phaser.Math.Between(0, 3)
     const rand = Math.random()
     let type = 'gold'
-    let color = 0xd4a338
+    let color = 0xffd700 // 金色更亮一点
     let size = 24
     
-    if (rand > 0.85) { type = 'sand'; color = 0x4a463f; size = 30 }
-    else if (rand > 0.7) { type = 'flood'; color = 0x8c2b2b; size = 28 }
+    if (rand > 0.85) { type = 'sand'; color = 0x4a3a2a; size = 30 }
+    else if (rand > 0.7) { type = 'flood'; color = 0xd04848; size = 28 }
 
     const container = this.add.container(LANE_X[lane], 100).setDepth(50)
     const g = this.add.graphics()
@@ -164,6 +182,10 @@ export class AngkorPoolScene extends Phaser.Scene {
       g.fillCircle(0, 0, size/2)
     }
     
+    // 给节点加个白色高光，更像水滴
+    g.fillStyle(0xffffff, 0.4)
+    g.fillCircle(-size/6, -size/6, size/6)
+
     container.add(g)
     container.setData('type', type)
     container.setData('lane', lane)
@@ -292,15 +314,12 @@ export class AngkorPoolScene extends Phaser.Scene {
   }
 
   private showSuccess() {
-    // 🌟 标记通关
     LevelProgress.markCompleted(LEVEL.id)
 
-    // 🌟 完美通关判定：一次都没漏接（missCount === 0）
     const isPerfect = this.missCount === 0
     const reward = CoinSystem.rewardLevel(LEVEL.id, isPerfect)
     CoinSystem.showFloatText(this, reward)
 
-    // 渲染成功面板
     this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.6).setDepth(5000)
     roundedPanel(this, 310, 180, 660, 320).setDepth(5001)
     this.add.text(640, 230, LEVEL.successTitle, { fontFamily: UI_FONT, fontSize: '32px', color: '#d4a338' }).setOrigin(0.5).setDepth(5002)
@@ -315,7 +334,8 @@ export class AngkorPoolScene extends Phaser.Scene {
   }
 
   private flashHitArea() {
-    const flash = this.add.rectangle(640, HIT_Y, 600, 60, 0xffffff, 0.2).setDepth(5)
+    // 🌟 调整打击特效，改成淡淡的白光而不是硬切
+    const flash = this.add.rectangle(640, HIT_Y, 600, 60, 0xffffff, 0.15).setDepth(5)
     this.tweens.add({
       targets: flash,
       alpha: 0,
